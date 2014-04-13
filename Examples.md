@@ -449,50 +449,56 @@ Let's assume that we have some raw C++ file handle API matching this type of set
 
 
 ```js
-
 function open(filename) {
   return new Promise(function(resolve, reject) {
     var handle = createRawFileHandle(filename);
     handle.open(function(error) {
-      if (error) reject(error)
-      else resolve(handle)
-    })
-  })
+      if (error) reject(error);
+      else resolve(handle);
+    });
+  });
 }
 
 function read(handle) {
   return new Promise(function(resolve, reject) {
     handle.read(function(error, done, data) {
-      if (error) reject(error)
-      else if (done) resolve(void(0))
-      else resolve(data)
-    })
-  })
+      if (error) reject(error);
+      else if (done) resolve(void(0));
+      else resolve(data);
+    });
+  });
 }
 
 function close(handle) {
-  return new Promie(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     handle.close(function (error) {
-      if (error) reject(error)
-      else resolve(void(0))
-    })
-  })
+      if (error) reject(error);
+      else resolve(void(0));
+    });
+  });
 }
 
-const readFile = (path, {highWaterMark = 16 * 1024} = {}) => {
-  const output = new Channel(highWaterMark);
-  spawn(function*() {
+
+function readFile(path, opts) {
+  opts = opts || {};
+  var highWaterMark = opts.highWaterMark || 16 * 1024;
+  var output = new Channel(highWaterMark);
+
+  function* read() {
     var file = yield open(filename);
     var chunk = void(0);
+
     try {
       while (chunk = yield read(file), chunk !== void(0)) {
-        yield output.output.put(chunk)
+        yield output.output.put(chunk);
       }
     } finally {
-      yield close(file)
+      yield close(file);
     }
-  })
-  return output
+  }
+
+  spawn(read);
+  return output;
 }
 ```
 
